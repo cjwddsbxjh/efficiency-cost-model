@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){const P='cost2026';const S=sessionStorage.getItem('auth_ok');if(S!=='1'){const p=prompt('请输入访问密码：');if(p!==P){document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0a0e1a;color:#94a3b8;font-family:sans-serif;font-size:18px">\u274c \u5bc6\u7801\u9519\u8bef\uff0c\u8bf7\u5237\u65b0\u9875\u9762\u91cd\u8bd5</div>';throw new Error('auth')}sessionStorage.setItem('auth_ok','1')}})();</script>
+<title>人效-成本 估算模型系统 | Operational Efficiency & Cost Estimation Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0a0e1a;--bg2:#111827;--card:#1a2332;--card2:#1e293b;--border:#334155;--border2:#475569;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--accent:#3b82f6;--accent2:#60a5fa;--accent3:#93c5fd;--green:#10b981;--green2:#34d399;--green3:#6ee7b7;--yellow:#f59e0b;--yellow2:#fbbf24;--yellow3:#fcd34d;--red:#ef4444;--red2:#f87171;--red3:#fca5a5;--purple:#8b5cf6;--purple2:#a78bfa;--purple3:#c4b5fd;--cyan:#06b6d4;--cyan2:#22d3ee;--cyan3:#67e8f9;--orange:#f97316;--orange2:#fb923c;--shadow:0 4px 24px rgba(0,0,0,0.4);--shadow2:0 8px 40px rgba(0,0,0,0.5)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif;min-height:100vh;font-size:14px;line-height:1.6;overflow-x:hidden}
+.app{max-width:1600px;margin:0 auto;padding:0 0 40px}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e293b 50%,#0f172a 100%);border-bottom:1px solid var(--border);padding:28px 40px;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:-60%;right:-5%;width:400px;height:400px;background:radial-gradient(circle,rgba(59,130,246,0.12) 0%,transparent 70%);pointer-events:none}
+.header::after{content:'';position:absolute;bottom:-60%;left:-5%;width:350px;height:350px;background:radial-gradient(circle,rgba(139,92,246,0.1) 0%,transparent 70%);pointer-events:none}
+.header-inner{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
+.header-left{display:flex;align-items:center;gap:20px}
+.logo-box{width:56px;height:56px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;color:#fff;box-shadow:0 4px 20px rgba(59,130,246,0.4);flex-shrink:0}
+.header-titles h1{font-size:26px;font-weight:700;background:linear-gradient(90deg,#fff,var(--accent3),var(--purple3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:0.5px}
+.header-titles .subtitle{font-size:13px;color:var(--text2);margin-top:4px;letter-spacing:2px;text-transform:uppercase}
+.header-right{display:flex;gap:12px;align-items:center}
+.status-badge{display:flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:30px;font-size:12px;color:var(--green2)}
+.pulse-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+.header-time{font-size:12px;color:var(--text3);text-align:right}
+.header-time .date{color:var(--text2)}
+.header-time .ver{color:var(--text3);font-size:11px;margin-top:2px}
+.nav-tabs{display:flex;gap:2px;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 40px;overflow-x:auto;scrollbar-width:thin}
+.nav-tabs::-webkit-scrollbar{height:4px}
+.nav-tabs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.nav-tab{padding:14px 24px;font-size:13.5px;font-weight:500;color:var(--text3);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:all 0.25s;white-space:nowrap;position:relative;display:flex;align-items:center;gap:8px}
+.nav-tab:hover{color:var(--text2);background:rgba(59,130,246,0.05)}
+.nav-tab.active{color:var(--accent2);border-bottom-color:var(--accent);background:rgba(59,130,246,0.08)}
+.nav-tab .tab-icon{font-size:16px}
+.tab-content{display:none;padding:24px 40px;animation:fadeIn 0.4s ease}
+.tab-content.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-size:15px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:10px}
+.card-header h3 .h-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(59,130,246,0.15);color:var(--accent2)}
+.card-header .h-tag{font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(148,163,184,0.1);color:var(--text2);border:1px solid var(--border)}
+.card-body{padding:20px}
+.grid{display:grid;gap:20px}
+.grid-2{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:repeat(3,1fr)}.grid-4{grid-template-columns:repeat(4,1fr)}.grid-5{grid-template-columns:repeat(5,1fr)}.grid-12{grid-template-columns:repeat(12,1fr)}
+.col-3{grid-column:span 3}.col-4{grid-column:span 4}.col-5{grid-column:span 5}.col-6{grid-column:span 6}.col-7{grid-column:span 7}.col-8{grid-column:span 8}.col-9{grid-column:span 9}.col-12{grid-column:span 12}
+@media(max-width:1200px){.grid-4,.grid-5{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:1fr}.col-3,.col-4,.col-5,.col-6,.col-7,.col-8,.col-9{grid-column:span 12}}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative;overflow:hidden;transition:transform 0.2s,border-color 0.2s}
+.stat-card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.stat-card .stat-label{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.stat-card .stat-value{font-size:24px;font-weight:700;color:var(--text);font-family:'Segoe UI',monospace}
+.stat-card .stat-unit{font-size:13px;color:var(--text3);font-weight:400;margin-left:4px}
+.stat-card .stat-change{font-size:11px;margin-top:6px;display:flex;align-items:center;gap:4px}
+.stat-card .stat-icon{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.15}
+.stat-card.blue .stat-icon{background:var(--accent);color:var(--accent)}.stat-card.green .stat-icon{background:var(--green);color:var(--green)}.stat-card.yellow .stat-icon{background:var(--yellow);color:var(--yellow)}.stat-card.red .stat-icon{background:var(--red);color:var(--red)}.stat-card.purple .stat-icon{background:var(--purple);color:var(--purple)}.stat-card.cyan .stat-icon{background:var(--cyan);color:var(--cyan)}
+.stat-card.blue{border-top:3px solid var(--accent)}.stat-card.green{border-top:3px solid var(--green)}.stat-card.yellow{border-top:3px solid var(--yellow)}.stat-card.red{border-top:3px solid var(--red)}.stat-card.purple{border-top:3px solid var(--purple)}.stat-card.cyan{border-top:3px solid var(--cyan)}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table thead th{background:var(--bg2);padding:10px 14px;text-align:left;font-weight:600;color:var(--text2);border-bottom:2px solid var(--border);font-size:12px;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap}
+.data-table tbody td{padding:10px 14px;border-bottom:1px solid rgba(51,65,85,0.5);color:var(--text)}
+.data-table tbody tr:hover{background:rgba(59,130,246,0.04)}
+.data-table tbody tr:last-child td{border-bottom:none}
+.data-table .num{text-align:right;font-family:'Segoe UI',monospace;font-variant-numeric:tabular-nums}
+.data-table .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500}
+.tag-blue{background:rgba(59,130,246,0.15);color:var(--accent2)}.tag-green{background:rgba(16,185,129,0.15);color:var(--green2)}.tag-yellow{background:rgba(245,158,11,0.15);color:var(--yellow2)}.tag-red{background:rgba(239,68,68,0.15);color:var(--red2)}.tag-purple{background:rgba(139,92,246,0.15);color:var(--purple2)}.tag-gray{background:rgba(148,163,184,0.1);color:var(--text2)}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;color:var(--text2);margin-bottom:6px;font-weight:500}
+.form-label .req{color:var(--red2);margin-left:2px}
+.form-hint{font-size:11px;color:var(--text3);margin-top:4px}
+.form-input,.form-select{width:100%;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;font-family:inherit;transition:all 0.2s}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,0.15)}
+.form-input::placeholder{color:var(--text3)}
+.form-select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:18px;padding-right:36px}
+.form-row{display:flex;gap:12px;align-items:flex-end}
+.form-row .form-group{flex:1}
+.btn{padding:10px 24px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;font-family:inherit}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#2563eb);color:#fff;box-shadow:0 4px 14px rgba(59,130,246,0.3)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,130,246,0.4)}
+.btn-primary:active{transform:translateY(0)}
+.btn-secondary{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent2)}
+.btn-success{background:linear-gradient(135deg,var(--green),#059669);color:#fff;box-shadow:0 4px 14px rgba(16,185,129,0.3)}
+.btn-success:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(16,185,129,0.4)}
+.btn-lg{padding:14px 32px;font-size:16px}
+.btn-sm{padding:6px 14px;font-size:12px}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important}
+.result-box{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-top:16px}
+.result-box.highlight{border-color:var(--accent);background:rgba(59,130,246,0.05)}
+.result-box.success{border-color:var(--green);background:rgba(16,185,129,0.05)}
+.result-box.warning{border-color:var(--yellow);background:rgba(245,158,11,0.05)}
+.result-box.danger{border-color:var(--red);background:rgba(239,68,68,0.05)}
+.result-title{font-size:13px;color:var(--text2);font-weight:600;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:8px}
+.result-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.result-item{background:rgba(15,23,42,0.5);border:1px solid rgba(51,65,85,0.5);border-radius:8px;padding:12px}
+.result-item .ri-label{font-size:11px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.result-item .ri-value{font-size:18px;font-weight:700;color:var(--text);font-family:monospace}
+.result-item .ri-value.blue{color:var(--accent2)}.result-item .ri-value.green{color:var(--green2)}.result-item .ri-value.yellow{color:var(--yellow2)}.result-item .ri-value.red{color:var(--red2)}.result-item .ri-value.purple{color:var(--purple2)}.result-item .ri-value.cyan{color:var(--cyan2)}
+.result-item .ri-unit{font-size:12px;color:var(--text3);font-weight:400;margin-left:3px}
+.result-item .ri-desc{font-size:11px;color:var(--text3);margin-top:4px}
+.model-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.model-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all 0.25s;position:relative}
+.model-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 20px rgba(59,130,246,0.15)}
+.model-card.selected{border-color:var(--accent);background:rgba(59,130,246,0.08);box-shadow:0 0 0 2px rgba(59,130,246,0.3)}
+.model-card .mc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.model-card .mc-name{font-size:14px;font-weight:600;color:var(--text)}
+.model-card .mc-type{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:500}
+.model-card .mc-formula{font-size:12px;color:var(--cyan2);font-family:'Courier New',monospace;background:rgba(6,182,212,0.08);padding:8px 10px;border-radius:6px;margin:8px 0;line-height:1.5}
+.model-card .mc-stats{display:flex;gap:12px;font-size:11px;flex-wrap:wrap}
+.model-card .mc-stat{color:var(--text3)}
+.model-card .mc-stat b{color:var(--text2);font-weight:600}
+.model-card .mc-weight{margin-top:10px;display:flex;align-items:center;gap:8px}
+.model-card .mc-weight label{font-size:11px;color:var(--text3);white-space:nowrap}
+.weight-slider{flex:1;-webkit-appearance:none;appearance:none;height:4px;background:var(--border);border-radius:2px;outline:none}
+.weight-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:16px;height:16px;background:var(--accent);border-radius:50%;cursor:pointer;box-shadow:0 0 6px rgba(59,130,246,0.5)}
+.weight-slider::-moz-range-thumb{width:16px;height:16px;background:var(--accent);border-radius:50%;cursor:pointer;border:none}
+.weight-value{font-size:12px;color:var(--accent2);font-weight:600;min-width:36px;text-align:right}
+.corr-matrix{display:grid;grid-template-columns:auto repeat(4,1fr);gap:1px;background:var(--border);border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.corr-cell{background:var(--card2);padding:10px 8px;text-align:center;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;min-height:44px;flex-direction:column;gap:2px}
+.corr-cell.header{background:var(--bg2);color:var(--text2);font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
+.corr-cell.label{background:var(--bg2);color:var(--text2);font-size:12px;text-align:left;padding-left:14px;justify-content:flex-start}
+.corr-cell .corr-r{font-size:14px;font-weight:700}
+.corr-cell .corr-p{font-size:10px;color:var(--text3);font-weight:400}
+.corr-strong-pos{color:var(--green2)}.corr-moderate-pos{color:var(--yellow2)}.corr-strong-neg{color:var(--red2)}.corr-moderate-neg{color:var(--orange2)}.corr-weak{color:var(--text3)}
+.chart-container{position:relative;height:320px;width:100%}
+.chart-container.tall{height:380px}.chart-container.short{height:240px}.chart-container.mini{height:180px}
+.section-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px}
+.section-title .st-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff}
+.section-title .st-line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+.alert{padding:12px 16px;border-radius:8px;font-size:13px;display:flex;align-items:flex-start;gap:10px;margin-bottom:16px}
+.alert-info{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);color:var(--accent3)}
+.alert-success{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:var(--green3)}
+.alert-warning{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:var(--yellow3)}
+.alert-danger{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--red3)}
+.alert .alert-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.weight-summary{background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(139,92,246,0.08));border:1px solid var(--accent);border-radius:12px;padding:20px;margin-top:16px}
+.weight-summary .ws-title{font-size:14px;font-weight:600;color:var(--accent2);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.weight-summary .ws-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.weight-summary .ws-item{background:rgba(15,23,42,0.4);border:1px solid var(--border);border-radius:8px;padding:14px}
+.weight-summary .ws-item .ws-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.weight-summary .ws-item .ws-value{font-size:20px;font-weight:700;color:var(--text);font-family:monospace}
+.weight-summary .ws-item .ws-value.accent{color:var(--accent2)}.weight-summary .ws-item .ws-value.green{color:var(--green2)}.weight-summary .ws-item .ws-value.yellow{color:var(--yellow2)}.weight-summary .ws-item .ws-value.red{color:var(--red2)}.weight-summary .ws-item .ws-value.purple{color:var(--purple2)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:500}
+.text-muted{color:var(--text3)}.text-accent{color:var(--accent2)}.text-green{color:var(--green2)}.text-yellow{color:var(--yellow2)}.text-red{color:var(--red2)}.text-purple{color:var(--purple2)}.text-cyan{color:var(--cyan2)}
+.text-center{text-align:center}.text-right{text-align:right}
+.mt-0{margin-top:0}.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}.mt-5{margin-top:20px}.mt-6{margin-top:24px}
+.mb-0{margin-bottom:0}.mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}.mb-5{margin-bottom:20px}.mb-6{margin-bottom:24px}
+.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
+.w-full{width:100%}.font-mono{font-family:'Courier New',monospace}.font-bold{font-weight:700}
+.text-sm{font-size:12px}.text-xs{font-size:11px}.text-lg{font-size:16px}.text-xl{font-size:20px}.text-2xl{font-size:24px}
+.spin{animation:spin 1s linear infinite}@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.recommend-box{background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(59,130,246,0.1));border:1px solid var(--purple);border-radius:10px;padding:16px;margin-top:12px}
+.recommend-box .rb-title{font-size:13px;font-weight:600;color:var(--purple2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.recommend-box .rb-content{font-size:13px;color:var(--text);line-height:1.7}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="header"><div class="header-inner"><div class="header-left"><div class="logo-box">📊</div><div class="header-titles"><h1>人效-成本 估算模型系统</h1><div class="subtitle">Operational Efficiency & Cost Estimation Platform</div></div></div><div class="header-right"><div class="status-badge"><div class="pulse-dot"></div><span>模型运行中 · 19期数据已加载</span></div><div class="header-time"><div class="date" id="currentDate"></div><div class="ver">v2.0.0 · Powered by Statistical Modeling Engine</div></div></div></div></div>
+
+<div class="nav-tabs">
+<button class="nav-tab active" onclick="switchTab(event,'overview')"><span class="tab-icon">📋</span> 总览仪表盘</button>
+<button class="nav-tab" onclick="switchTab(event,'scenario1')"><span class="tab-icon">🎯</span> 场景一：成本下降→人效</button>
+<button class="nav-tab" onclick="switchTab(event,'scenario2')"><span class="tab-icon">📈</span> 场景二：人效调整→成本</button>
+<button class="nav-tab" onclick="switchTab(event,'correlation')"><span class="tab-icon">🔗</span> 相关性分析</button>
+<button class="nav-tab" onclick="switchTab(event,'models')"><span class="tab-icon">⚙️</span> 模型管理 & 加权</button>
+<button class="nav-tab" onclick="switchTab(event,'data')"><span class="tab-icon">🗂️</span> 数据源</button>
+</div>
+
+<!-- TAB 1: OVERVIEW -->
+<div class="tab-content active" id="tab-overview">
+<div class="grid grid-4 mb-5">
+<div class="stat-card blue"><div class="stat-icon">📦</div><div class="stat-label">中转结算量 (最新月)</div><div class="stat-value" id="ovVol">270,098<span class="stat-unit">万票</span></div><div class="stat-change text-muted" id="ovVolMonth">2026年7月</div></div>
+<div class="stat-card yellow"><div class="stat-icon">💰</div><div class="stat-label">操作成本 (最新月)</div><div class="stat-value" id="ovCost">50,214.70<span class="stat-unit">万元</span></div><div class="stat-change text-muted" id="ovCostMonth">2026年7月</div></div>
+<div class="stat-card green"><div class="stat-icon">🎫</div><div class="stat-label">单票操作成本 (最新月)</div><div class="stat-value" id="ovUC">0.185913<span class="stat-unit">元</span></div><div class="stat-change text-muted" id="ovUCMonth">2026年7月</div></div>
+<div class="stat-card purple"><div class="stat-icon">👤</div><div class="stat-label">人均效能 (最新月)</div><div class="stat-value" id="ovEff">2,078.41<span class="stat-unit">件/人</span></div><div class="stat-change text-muted" id="ovEffMonth">2026年7月</div></div>
+</div>
+<div class="grid grid-12 mb-5">
+<div class="card col-8"><div class="card-header"><h3><span class="h-icon">📈</span> 月度趋势：操作成本 & 人均效能</h3><span class="h-tag">2025.01 - 2026.07 · 19期</span></div><div class="card-body"><div class="chart-container tall"><canvas id="chartTrend"></canvas></div></div></div>
+<div class="card col-4"><div class="card-header"><h3><span class="h-icon">🎯</span> 核心指标速览</h3></div><div class="card-body"><div class="grid" style="gap:10px">
+<div class="result-item"><div class="ri-label">操作成本均值</div><div class="ri-value blue" id="ovAvgCost">51,030<span class="ri-unit">万元</span></div></div>
+<div class="result-item"><div class="ri-label">人均效能均值</div><div class="ri-value purple" id="ovAvgEff">2,006<span class="ri-unit">件</span></div></div>
+<div class="result-item"><div class="ri-label">单票成本均值</div><div class="ri-value green" id="ovAvgUC">0.197<span class="ri-unit">元</span></div></div>
+<div class="result-item"><div class="ri-label">中转量均值</div><div class="ri-value yellow" id="ovAvgVol">263,814<span class="ri-unit">万</span></div></div>
+<div class="result-item"><div class="ri-label">成本波动范围</div><div class="ri-value red" id="ovCostRange">10,758<span class="ri-unit">万元</span></div><div class="ri-desc">最大值 - 最小值</div></div>
+<div class="result-item"><div class="ri-label">人效波动范围</div><div class="ri-value cyan" id="ovEffRange">384<span class="ri-unit">件</span></div><div class="ri-desc">最大值 - 最小值</div></div>
+</div></div></div>
+</div>
+<div class="grid grid-12">
+<div class="card col-6"><div class="card-header"><h3><span class="h-icon">📊</span> 操作成本分布</h3><span class="h-tag">月度柱状图</span></div><div class="card-body"><div class="chart-container"><canvas id="chartCostBar"></canvas></div></div></div>
+<div class="card col-6"><div class="card-header"><h3><span class="h-icon">📉</span> 单票成本 & 人效散点</h3><span class="h-tag">负相关 r=-0.5353</span></div><div class="card-body"><div class="chart-container"><canvas id="chartScatter"></canvas></div></div></div>
+</div>
+</div>
+
+<!-- TAB 2: SCENARIO 1 -->
+<div class="tab-content" id="tab-scenario1">
+<div class="section-title"><div class="st-icon">🎯</div>场景一：操作成本下降 → 人均效能需提升至多少？<div class="st-line"></div></div>
+<div class="alert alert-info"><div class="alert-icon">ℹ️</div><div><b>场景说明：</b> 假设9月操作成本需要下降一定数值（单位：万元），基于历史数据建立的统计回归模型，估算人均效能需要提升至多少件/人才能实现该成本下降目标。<br><b>基准月：</b>2026年7月（最新月）操作成本 = <b>50,214.70 万元</b>，人均效能 = <b>2,078.41 件/人</b></div></div>
+<div class="grid grid-12 mb-5">
+<div class="card col-5"><div class="card-header"><h3><span class="h-icon">🛠️</span> 参数输入</h3></div><div class="card-body">
+<div class="form-group"><label class="form-label">成本下降目标值 <span class="req">*</span></label><div class="form-row"><input type="number" class="form-input" id="s1CostReduction" value="1000" placeholder="例如：1000" step="any"><select class="form-select" style="width:100px" id="s1Unit"><option value="wan">万元</option><option value="percent">百分比(%)</option></select></div><div class="form-hint">输入正数表示成本下降。例如输入1000表示下降1000万元。</div></div>
+<div class="form-group"><label class="form-label">参与计算的模型</label><div id="s1ModelList" style="display:flex;flex-direction:column;gap:8px"></div></div>
+<button class="btn btn-primary btn-lg w-full mt-3" onclick="runScenario1()">🔍 开始估算</button>
+</div></div>
+<div class="card col-7"><div class="card-header"><h3><span class="h-icon">📤</span> 估算结果</h3><span class="h-tag" id="s1ModelCount">等待计算...</span></div><div class="card-body" id="s1Results"><div class="text-center text-muted" style="padding:60px 0"><div style="font-size:48px;opacity:0.3">🎯</div><div class="mt-3">点击"开始估算"查看结果</div></div></div></div>
+</div>
+<div class="card"><div class="card-header"><h3><span class="h-icon">📊</span> 各模型估算对比图</h3></div><div class="card-body"><div class="chart-container tall"><canvas id="chartS1Compare"></canvas></div></div></div>
+</div>
+
+<!-- TAB 3: SCENARIO 2 -->
+<div class="tab-content" id="tab-scenario2">
+<div class="section-title"><div class="st-icon">📈</div>场景二：人均效能调整 → 对操作成本 & 单票操作成本的影响<div class="st-line"></div></div>
+<div class="alert alert-info"><div class="alert-icon">ℹ️</div><div><b>场景说明：</b> 假设人均效能调整到一定数值（单位：件/人），基于统计回归模型估算对操作成本（万元，精确到小数点后两位）和单票操作成本（元，精确到小数点后六位）的影响。<br><b>基准月：</b>2026年7月 · 人均效能 = <b>2,078.41 件</b> · 操作成本 = <b>50,214.70 万元</b> · 单票成本 = <b>0.185913 元</b></div></div>
+<div class="grid grid-12 mb-5">
+<div class="card col-5"><div class="card-header"><h3><span class="h-icon">🛠️</span> 参数输入</h3></div><div class="card-body">
+<div class="form-group"><label class="form-label">目标人均效能 <span class="req">*</span></label><input type="number" class="form-input" id="s2Efficiency" value="2200" placeholder="例如：2200" step="any"><div class="form-hint">单位：件/人。例如输入2200表示人均效能调整为2200件/人。</div></div>
+<div class="form-group"><label class="form-label">参与计算的模型</label><div id="s2ModelList" style="display:flex;flex-direction:column;gap:8px"></div></div>
+<button class="btn btn-success btn-lg w-full mt-3" onclick="runScenario2()">📈 开始估算</button>
+</div></div>
+<div class="card col-7"><div class="card-header"><h3><span class="h-icon">📤</span> 估算结果</h3><span class="h-tag" id="s2ModelCount">等待计算...</span></div><div class="card-body" id="s2Results"><div class="text-center text-muted" style="padding:60px 0"><div style="font-size:48px;opacity:0.3">📈</div><div class="mt-3">点击"开始估算"查看结果</div></div></div></div>
+</div>
+<div class="grid grid-12">
+<div class="card col-6"><div class="card-header"><h3><span class="h-icon">💰</span> 操作成本变化（各模型对比）</h3></div><div class="card-body"><div class="chart-container"><canvas id="chartS2Cost"></canvas></div></div></div>
+<div class="card col-6"><div class="card-header"><h3><span class="h-icon">🎫</span> 单票操作成本变化（各模型对比）</h3></div><div class="card-body"><div class="chart-container"><canvas id="chartS2UnitCost"></canvas></div></div></div>
+</div>
+</div>
+
+<!-- TAB 4: CORRELATION -->
+<div class="tab-content" id="tab-correlation">
+<div class="section-title"><div class="st-icon">🔗</div>Pearson 相关系数及其显著性分析<div class="st-line"></div></div>
+<div class="alert alert-warning"><div class="alert-icon">⚠️</div><div><b>统计说明：</b> Pearson相关系数(r) 衡量两个变量之间的线性相关程度，取值范围 [-1, 1]。<b>|r|≥0.8</b> 为强相关，<b>0.5≤|r|＜0.8</b> 为中等相关，<b>0.3≤|r|＜0.5</b> 为弱相关，<b>|r|＜0.3</b> 为极弱/无相关。显著性水平 p&lt;0.05 表示具有统计学意义。样本量 n=19（2025.01~2026.07）。</div></div>
+<div class="grid grid-12 mb-5">
+<div class="card col-7"><div class="card-header"><h3><span class="h-icon">🔢</span> Pearson 相关矩阵</h3><span class="h-tag">n=19 · 双尾检验</span></div><div class="card-body"><div class="corr-matrix" id="corrMatrix"></div><div class="mt-4" style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px"><span><span class="badge tag-green">**</span> p&lt;0.01 极显著</span><span><span class="badge tag-yellow">*</span> p&lt;0.05 显著</span><span><span class="badge tag-gray">ns</span> p≥0.05 不显著</span></div></div></div>
+<div class="card col-5"><div class="card-header"><h3><span class="h-icon">📋</span> 相关性强度评级</h3></div><div class="card-body"><div id="corrStrengthList"></div></div></div>
+</div>
+<div class="grid grid-12">
+<div class="card col-6"><div class="card-header"><h3><span class="h-icon">📉</span> 人均效能 vs 单票操作成本</h3><span class="h-tag" id="tagCorrEffUC">r=-0.5353 · p=0.0182 *</span></div><div class="card-body"><div class="chart-container tall"><canvas id="chartCorrEffUC"></canvas></div></div></div>
+<div class="card col-6"><div class="card-header"><h3><span class="h-icon">📊</span> 中转结算量 vs 人均效能</h3><span class="h-tag" id="tagCorrVolEff">r=0.6894 · p=0.0011 **</span></div><div class="card-body"><div class="chart-container tall"><canvas id="chartCorrVolEff"></canvas></div></div></div>
+</div>
+<div class="grid grid-12 mt-5">
+<div class="card col-6"><div class="card-header"><h3><span class="h-icon">📦</span> 中转结算量 vs 单票操作成本</h3><span class="h-tag" id="tagCorrVolUC">r=-0.9001 · p&lt;0.001 ***</span></div><div class="card-body"><div class="chart-container tall"><canvas id="chartCorrVolUC"></canvas></div></div></div>
+<div class="card col-6"><div class="card-header"><h3><span class="h-icon">💰</span> 中转结算量 vs 操作成本</h3><span class="h-tag" id="tagCorrVolCost">r=0.3649 · p=0.1245 ns</span></div><div class="card-body"><div class="chart-container tall"><canvas id="chartCorrVolCost"></canvas></div></div></div>
+</div>
+</div>
+
+<!-- TAB 5: MODELS -->
+<div class="tab-content" id="tab-models">
+<div class="section-title"><div class="st-icon">⚙️</div>模型管理 & 加权配置<div class="st-line"></div></div>
+<div class="alert alert-info"><div class="alert-icon">ℹ️</div><div><b>加权估算机制：</b> 系统提供7种数学统计回归模型，每个模型可独立计算预测值。用户可为各模型分配权重（0-100%），系统将根据权重计算加权平均值作为<b>最终标准推荐值</b>。所有模型基于2025.01~2026.07共19期数据拟合。建议优先选择 R² 较高且 p 值显著的模型赋予更高权重。</div></div>
+<div class="grid grid-12 mb-5">
+<div class="card col-8"><div class="card-header"><h3><span class="h-icon">📚</span> 可用模型列表</h3><span class="h-tag">拖动滑块设置权重</span></div><div class="card-body"><div class="model-grid" id="modelGrid"></div></div></div>
+<div class="card col-4"><div class="card-header"><h3><span class="h-icon">⚖️</span> 加权汇总</h3></div><div class="card-body"><div id="weightSummary"><div class="text-center text-muted" style="padding:40px 0"><div style="font-size:36px;opacity:0.3">⚖️</div><div class="mt-3">设置权重后点击下方按钮</div></div></div><button class="btn btn-secondary w-full mt-3" onclick="normalizeWeights()">🔄 权重归一化</button><button class="btn btn-primary w-full mt-2" onclick="updateWeightSummary()">💡 计算加权标准值</button></div></div>
+</div>
+<div class="card"><div class="card-header"><h3><span class="h-icon">📊</span> 模型拟合优度对比</h3></div><div class="card-body"><div class="chart-container tall"><canvas id="chartModelCompare"></canvas></div></div></div>
+</div>
+
+<!-- TAB 6: DATA -->
+<div class="tab-content" id="tab-data">
+<div class="section-title"><div class="st-icon">🗂️</div>数据源明细<div class="st-line"></div></div>
+<div class="alert alert-success"><div class="alert-icon">✅</div><div><b>数据来源：</b> 人效模型.xlsx · 工作表「数据源」（初始）+ 用户手动追加<br><b>单位说明：</b> 中转结算量（万票）· 操作成本（万元）· 单票操作成本（元）· 人均效能（件/人）<br><b>动态更新：</b> 新增数据后系统将自动重新拟合全部7个回归模型、重算Pearson相关系数、刷新所有图表与估算结果</div></div>
+<div class="grid grid-12 mb-5">
+<div class="card col-5">
+<div class="card-header"><h3><span class="h-icon">➕</span> 新增月度数据</h3><span class="h-tag">追加后自动重算</span></div>
+<div class="card-body">
+<div class="alert alert-info" style="margin-bottom:12px"><div class="alert-icon">💡</div><div style="font-size:12px">填写新的一期月度数据，点击「追加并重算」后，系统将：<br>1. 将新数据追加到数据集尾部<br>2. 重新拟合全部7个回归模型参数<br>3. 重算所有Pearson相关系数与显著性<br>4. 自动刷新所有Tab的图表与估算结果<br>5. 更新基准月为最新一期</div></div>
+<div class="form-group"><label class="form-label">月份 <span class="req">*</span></label><div class="form-row"><select class="form-select" id="newMonthYear" style="width:90px"><option>2025</option><option selected>2026</option><option>2027</option></select><select class="form-select" id="newMonthMonth" style="width:80px"><option value="01">1月</option><option value="02">2月</option><option value="03">3月</option><option value="04">4月</option><option value="05">5月</option><option value="06">6月</option><option value="07">7月</option><option value="08" selected>8月</option><option value="09">9月</option><option value="10">10月</option><option value="11">11月</option><option value="12">12月</option></select></div><div class="form-hint">选择新增数据对应的年月</div></div>
+<div class="form-group"><label class="form-label">中转结算量（万票）<span class="req">*</span></label><input type="number" class="form-input" id="newVolume" placeholder="例如：280000" step="any"><div class="form-hint">单位：万票</div></div>
+<div class="form-group"><label class="form-label">操作成本（万元）<span class="req">*</span></label><input type="number" class="form-input" id="newCost" placeholder="例如：51000" step="any"><div class="form-hint">单位：万元</div></div>
+<div class="form-group"><label class="form-label">单票操作成本（元）</label><input type="number" class="form-input" id="newUnitCost" placeholder="留空则自动计算" step="any"><div class="form-hint">单位：元。留空系统将根据中转量÷操作成本自动计算</div></div>
+<div class="form-group"><label class="form-label">人均效能（件/人）<span class="req">*</span></label><input type="number" class="form-input" id="newEfficiency" placeholder="例如：2100" step="any"><div class="form-hint">单位：件/人</div></div>
+<button class="btn btn-success btn-lg w-full" onclick="addNewData()">➕ 追加并重算全部模型</button>
+<button class="btn btn-danger btn-sm w-full mt-2" onclick="removeLastData()">🗑️ 删除最后一期数据</button>
+<div id="addDataStatus" style="margin-top:10px"></div>
+</div>
+</div>
+<div class="card col-7">
+<div class="card-header"><h3><span class="h-icon">📋</span> 完整数据表</h3><span class="h-tag" id="dataCountTag">19 期</span></div>
+<div class="card-body" style="overflow-x:auto"><table class="data-table" id="dataTable"></table></div>
+</div>
+</div>
+<div class="grid grid-4">
+<div class="stat-card blue"><div class="stat-icon">📊</div><div class="stat-label">总记录数</div><div class="stat-value" id="statTotal">19<span class="stat-unit">期</span></div></div>
+<div class="stat-card green"><div class="stat-icon">📅</div><div class="stat-label">起始月份</div><div class="stat-value" style="font-size:18px" id="statStart">2025-01</div></div>
+<div class="stat-card yellow"><div class="stat-icon">📅</div><div class="stat-label">截止月份</div><div class="stat-value" style="font-size:18px" id="statEnd">2026-07</div></div>
+<div class="stat-card purple"><div class="stat-icon">🔢</div><div class="stat-label">维度数</div><div class="stat-value">4<span class="stat-unit">个</span></div></div>
+</div>
+<div class="card mt-5">
+<div class="card-header"><h3><span class="h-icon">🔄</span> 数据变更日志</h3><span class="h-tag">记录每次新增/删除操作</span></div>
+<div class="card-body"><div id="changeLog" style="max-height:200px;overflow-y:auto;font-size:13px;font-family:monospace"><div class="text-muted">暂无变更记录</div></div></div>
+</div>
+</div>
+
+</div>
+<script>
+// DATA (let = mutable for dynamic add/remove)
+let months=['2025-01','2025-02','2025-03','2025-04','2025-05','2025-06','2025-07','2025-08','2025-09','2025-10','2025-11','2025-12','2026-01','2026-02','2026-03','2026-04','2026-05','2026-06','2026-07'];
+let monthsShort=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月','1月','2月','3月','4月','5月','6月','7月'];
+let volume=[230913.6503,173324.8122,259834.5957,263637.89,272793.384,258109.196,254836.324,246288.6396,259651.4602,276064.5284,287957.6999,287253.1993,296040.1166,190444.3684,287273.9995,274749.4567,288030.7536,267822.0767,270098.2686];
+let cost=[54360.8619459753,48054.4618507218,46690.7600447206,49540.5377581311,50289.1694184762,48229.1235337071,47918.0946073931,47243.4060218609,49520.0902330377,53380.7377856226,53866.9352828868,58812.2451007358,52949.730618,52063.320377,51499.138446,52021.690354,53072.086087,52328.986186,50214.696772];
+let unitCost=[0.235416407281901,0.277250909669365,0.179694162430275,0.187911296658197,0.184348933544797,0.186855502559107,0.188034789763304,0.191821295933866,0.190717549575474,0.1933632621873,0.187065445034439,0.204740087295995,0.178859984336326,0.273378104138258,0.179268358903466,0.18934228652835,0.184258400964723,0.195387127270379,0.18591269404383];
+let efficiency=[1828.34,1796.87,1935.59,1989.5,2014.5,1994.76,1960.02,1949.65,2037.6,2044.32,2046.75,2035.11,2115.19,2041.36,2055.67,2113.36,2181.33,2098.14,2078.41];
+let changeLogEntries=[];
+
+// MODELS (let = mutable for dynamic refit)
+let M1={id:'M1',name:'线性回归 (Cost~Eff)',type:'线性',formula:'',slope:11.808168,intercept:27347.828346,r:0.371663,p:0.117163,r2:0.138133,predictCost(e){return this.slope*e+this.intercept},predictEff(c){return (c-this.intercept)/this.slope}};
+let M2={id:'M2',name:'线性回归 (Cost~Vol)',type:'线性',formula:'',slope:0.034068,intercept:42293.951169,r:0.364889,p:0.124523,r2:0.133144,predictCostByVol(v){return this.slope*v+this.intercept}};
+let M3={id:'M3',name:'多元回归 (Cost~Vol+Eff)',type:'多元',formula:'',a:0.019334,b:7.272176,c:31463.262604,r2:0.160632,predictCostMulti(v,e){return this.a*v+this.b*e+this.c}};
+let M4={id:'M4',name:'多项式回归二阶 (Cost~Eff²)',type:'多项式',formula:'',a:0.048767,b:-181.512865,c:218465.724022,r2:0.175169,predictCost(e){return this.a*e*e+this.b*e+this.c},predictEff(c){const A=this.a,B=this.b,C=this.c-c;const d=B*B-4*A*C;if(d<0)return null;const e1=(-B+Math.sqrt(d))/(2*A),e2=(-B-Math.sqrt(d))/(2*A);if(e1>500&&e1<5000)return e1;if(e2>500&&e2<5000)return e2;return Math.max(e1,e2)}};
+let M5={id:'M5',name:'对数回归 (Cost~ln(Eff))',type:'对数',formula:'',slope:22933.4142,intercept:-123319.5529,r:0.365149,p:0.124234,r2:0.133334,predictCost(e){return this.intercept+this.slope*Math.log(e)},predictEff(c){return Math.exp((c-this.intercept)/this.slope)}};
+let M6={id:'M6',name:'指数回归 (Cost~exp(Eff))',type:'指数',formula:'',a:31670.8238,b:0.00023702,r:0.386577,p:0.102061,r2:0.149441,predictCost(e){return this.a*Math.exp(this.b*e)},predictEff(c){return Math.log(c/this.a)/this.b}};
+let M7={id:'M7',name:'幂函数回归 (Cost~Eff^b)',type:'幂函数',formula:'',a:1539.7539,b:0.460264,r:0.379754,p:0.108785,r2:0.144213,predictCost(e){return this.a*Math.pow(e,this.b)},predictEff(c){return Math.pow(c/this.a,1/this.b)}};
+let UC_MODEL={slope:-0.00016672,intercept:0.535881,r:-0.535265,p:0.018193,predictUnitCost(e){return this.slope*e+this.intercept}};
+let VOL_EFF_MODEL={slope:0.002026,intercept:1489.3325,r:0,p:0};
+let BASE={volume:270098.2686,cost:50214.696772,unitCost:0.18591269404383,eff:2078.41,monthIdx:18};
+let CORRS=[];
+let ALL_MODELS=[M1,M2,M3,M4,M5,M6,M7];
+const modelWeights={M1:20,M2:5,M3:20,M4:25,M5:5,M6:10,M7:15};
+
+// === DYNAMIC RECALC ENGINE ===
+function pearson(x,y){const n=x.length;if(n<2)return{r:0,p:1};const sx=x.reduce((a,b)=>a+b,0),sy=y.reduce((a,b)=>a+b,0);const mx=sx/n,my=sy/n;let sxy=0,sxx=0,syy=0;for(let i=0;i<n;i++){sxy+=(x[i]-mx)*(y[i]-my);sxx+=(x[i]-mx)**2;syy+=(y[i]-my)**2}if(sxx===0||syy===0)return{r:0,p:1};const r=sxy/Math.sqrt(sxx*syy);const t=Math.abs(r)*Math.sqrt((n-2)/(1-r*r+1e-30));const p=2*(1-tdistCDF(t,n-2));return{r,p}}
+function tdistCDF(t,df){if(df<=0)return 0.5;const x=df/(df+t*t);return 0.5*incbet(df*0.5,0.5,x)}
+function incbet(a,b,x){if(x<=0)return 0;if(x>=1)return 1;const lbeta=Math.log(gamma(a))+Math.log(gamma(b))-Math.log(gamma(a+b));const front=Math.exp(Math.log(x)*a+Math.log(1-x)*b-lbeta)/a;return front*contFracBet(a,b,x)}
+function gamma(x){if(x<0.5)return Math.PI/(Math.sin(Math.PI*x)*gamma(1-x));x-=1;const g=[0.99999999999980793,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];let a=g[0];for(let i=1;i<g.length;i++)a+=g[i]/(x+i);const t=x+7.5;return Math.sqrt(2*Math.PI)*Math.pow(t,x+0.5)*Math.exp(-t)*a}
+function contFracBet(a,b,x){const maxIter=200;const eps=3e-7;let qab=a+b,qap=a+1,qam=a-1;let c=1,d=1-qab*x/qap;let h;if(Math.abs(d)<eps)d=eps;d=1/d;h=d;for(let m=1;m<=maxIter;m++){const m2=2*m;let aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<eps)d=eps;c=1+aa/c;if(Math.abs(c)<eps)c=eps;d=1/d;h*=d*c;aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<eps)d=eps;c=1+aa/c;if(Math.abs(c)<eps)c=eps;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<eps)break}return h}
+function linReg(x,y){const n=x.length;if(n<3)return{slope:0,intercept:0,r:0,p:1,r2:0};const pr=pearson(x,y);const sx=x.reduce((a,b)=>a+b,0),sy=y.reduce((a,b)=>a+b,0);const sxy=x.reduce((a,_,i)=>a+x[i]*y[i],0),sxx=x.reduce((a,b)=>a+b*b,0);const slope=(n*sxy-sx*sy)/(n*sxx-sx*sx+1e-30);const intercept=(sy-slope*sx)/n;return{slope,intercept,r:pr.r,p:pr.p,r2:pr.r*pr.r}}
+function multiReg(X1,X2,Y){const n=X1.length;if(n<4)return{a:0,b:0,c:0,r2:0};const s1=X1.reduce((a,b)=>a+b,0),s2=X2.reduce((a,b)=>a+b,0),sy=Y.reduce((a,b)=>a+b,0);const s11=X1.reduce((a,b)=>a+b*b,0),s22=X2.reduce((a,b)=>a+b*b,0),s12=X1.reduce((a,_,i)=>a+X1[i]*X2[i],0);const s1y=X1.reduce((a,_,i)=>a+X1[i]*Y[i],0),s2y=X2.reduce((a,_,i)=>a+X2[i]*Y[i],0);const D=n*(s11*s22-s12*s12)-s1*(s1*s22-s12*s2)+s2*(s1*s12-s11*s2);if(Math.abs(D)<1e-20)return{a:0,b:0,c:0,r2:0};const a=(n*(s1y*s22-s2y*s12)-s1*(sy*s22-s2y*s2)+s2*(sy*s12-s1y*s2))/D;const b=(n*(s11*s2y-s12*s1y)-s1*(s1*s2y-s12*sy)+s2*(s1*s1y-s11*sy))/D;const c=(sy-a*s1-b*s2)/n;let ssRes=0,ssTot=0;const my=sy/n;for(let i=0;i<n;i++){const pred=a*X1[i]+b*X2[i]+c;ssRes+=(Y[i]-pred)**2;ssTot+=(Y[i]-my)**2}const r2=ssTot>0?1-ssRes/ssTot:0;return{a,b,c,r2}}
+function poly2Reg(x,y){const n=x.length;if(n<4)return{a:0,b:0,c:0,r2:0};const x2=x.map(v=>v*v);return multiReg(x,x2,y)}
+function logReg(x,y){const lx=x.map(v=>Math.log(v));const lr=linReg(lx,y);return{slope:lr.slope,intercept:lr.intercept,r:lr.r,p:lr.p,r2:lr.r2}}
+function expReg(x,y){const ly=y.map(v=>Math.log(v));const lr=linReg(x,ly);const a=Math.exp(lr.intercept),b=lr.slope;return{a,b,r:lr.r,p:lr.p,r2:lr.r2}}
+function powerReg(x,y){const lx=x.map(v=>Math.log(v)),ly=y.map(v=>Math.log(v));const lr=linReg(lx,ly);const a=Math.exp(lr.intercept),b=lr.slope;return{a,b,r:lr.r,p:lr.p,r2:lr.r2}}
+function fmtP(p){if(p<0.001)return '<0.001';return p.toFixed(4)}
+function sigTag(p){if(p<0.001)return '***';if(p<0.01)return '**';if(p<0.05)return '*';return 'ns'}
+
+function refitAllModels(){
+const n=efficiency.length;
+if(n<4){console.warn('数据不足，至少需要4期');return}
+// M1: Linear Cost~Eff
+const r1=linReg(efficiency,cost);M1.slope=r1.slope;M1.intercept=r1.intercept;M1.r=r1.r;M1.p=r1.p;M1.r2=r1.r2;M1.formula=`Cost = ${r1.slope.toFixed(4)} × Eff + ${r1.intercept.toFixed(2)}`;
+// M2: Linear Cost~Vol
+const r2=linReg(volume,cost);M2.slope=r2.slope;M2.intercept=r2.intercept;M2.r=r2.r;M2.p=r2.p;M2.r2=r2.r2;M2.formula=`Cost = ${r2.slope.toFixed(6)} × Vol + ${r2.intercept.toFixed(2)}`;
+// M3: Multiple regression Cost~Vol+Eff
+const r3=multiReg(volume,efficiency,cost);M3.a=r3.a;M3.b=r3.b;M3.c=r3.c;M3.r2=r3.r2;M3.formula=`Cost = ${r3.a.toFixed(5)}×Vol + ${r3.b.toFixed(4)}×Eff + ${r3.c.toFixed(2)}`;
+// M4: Polynomial 2nd order Cost~Eff²
+const r4=poly2Reg(efficiency,cost);M4.a=r4.a;M4.b=r4.b;M4.c=r4.c;M4.r2=r4.r2;M4.formula=`Cost = ${r4.a.toFixed(5)}×Eff² + ${r4.b.toFixed(3)}×Eff + ${r4.c.toFixed(0)}`;
+// M5: Log regression
+const r5=logReg(efficiency,cost);M5.slope=r5.slope;M5.intercept=r5.intercept;M5.r=r5.r;M5.p=r5.p;M5.r2=r5.r2;M5.formula=`Cost = ${r5.intercept.toFixed(2)} + ${r5.slope.toFixed(2)} × ln(Eff)`;
+// M6: Exponential regression
+const r6=expReg(efficiency,cost);M6.a=r6.a;M6.b=r6.b;M6.r=r6.r;M6.p=r6.p;M6.r2=r6.r2;M6.formula=`Cost = ${r6.a.toFixed(2)} × exp(${r6.b.toFixed(8)} × Eff)`;
+// M7: Power regression
+const r7=powerReg(efficiency,cost);M7.a=r7.a;M7.b=r7.b;M7.r=r7.r;M7.p=r7.p;M7.r2=r7.r2;M7.formula=`Cost = ${r7.a.toFixed(2)} × Eff^${r7.b.toFixed(4)}`;
+// UC_MODEL: UnitCost~Eff
+const ruc=linReg(efficiency,unitCost);UC_MODEL.slope=ruc.slope;UC_MODEL.intercept=ruc.intercept;UC_MODEL.r=ruc.r;UC_MODEL.p=ruc.p;
+// VOL_EFF_MODEL
+const rve=linReg(volume,efficiency);VOL_EFF_MODEL.slope=rve.slope;VOL_EFF_MODEL.intercept=rve.intercept;VOL_EFF_MODEL.r=rve.r;VOL_EFF_MODEL.p=rve.p;
+// BASE = latest month
+const li=n-1;BASE.volume=volume[li];BASE.cost=cost[li];BASE.unitCost=unitCost[li];BASE.eff=efficiency[li];BASE.monthIdx=li;
+// CORRS
+const cVolCost=pearson(volume,cost);const cVolUC=pearson(volume,unitCost);const cVolEff=pearson(volume,efficiency);const cCostUC=pearson(cost,unitCost);const cCostEff=pearson(cost,efficiency);const cUCEff=pearson(unitCost,efficiency);
+CORRS=[
+{x:'中转结算量',y:'操作成本',r:cVolCost.r,p:cVolCost.p,sig:sigTag(cVolCost.p)},
+{x:'中转结算量',y:'单票成本',r:cVolUC.r,p:cVolUC.p,sig:sigTag(cVolUC.p)},
+{x:'中转结算量',y:'人均效能',r:cVolEff.r,p:cVolEff.p,sig:sigTag(cVolEff.p)},
+{x:'操作成本',y:'单票成本',r:cCostUC.r,p:cCostUC.p,sig:sigTag(cCostUC.p)},
+{x:'操作成本',y:'人均效能',r:cCostEff.r,p:cCostEff.p,sig:sigTag(cCostEff.p)},
+{x:'单票成本',y:'人均效能',r:cUCEff.r,p:cUCEff.p,sig:sigTag(cUCEff.p)}
+];
+}
+
+function addNewData(){
+const yr=document.getElementById('newMonthYear').value;
+const mo=document.getElementById('newMonthMonth').value;
+const mon=yr+'-'+mo;
+const vol=parseFloat(document.getElementById('newVolume').value);
+const cst=parseFloat(document.getElementById('newCost').value);
+let uc=document.getElementById('newUnitCost').value.trim();
+const eff=parseFloat(document.getElementById('newEfficiency').value);
+if(isNaN(vol)||vol<=0){alert('请输入有效的\u4e2d\u8f6c\u7ed3\u7b97\u91cf');return}
+if(isNaN(cst)||cst<=0){alert('请输入有效的\u64cd\u4f5c\u6210\u672c');return}
+if(isNaN(eff)||eff<=0){alert('请输入有效的\u4eba\u5747\u6548\u80fd');return}
+if(uc===''||isNaN(parseFloat(uc))){uc=vol>0?cst/vol:0}else{uc=parseFloat(uc)}
+if(months.includes(mon)){alert(`\u6708\u4efd ${mon} \u5df2\u5b58\u5728\uff0c\u8bf7\u52ff\u91cd\u590d\u6dfb\u52a0`);return}
+months.push(mon);const ms=parseInt(mo);monthsShort.push(ms+'\u6708');volume.push(vol);cost.push(cst);unitCost.push(uc);efficiency.push(eff);
+changeLogEntries.push({time:new Date().toLocaleString('zh-CN'),action:'add',month:mon,vol:vol,cost:cst,unitCost:uc,eff:eff});
+refitAllModels();refreshAll();
+const st=document.getElementById('addDataStatus');st.innerHTML='<div class="alert alert-success" style="padding:8px 12px;margin:0"><span>✅</span> 已追加 '+mon+' 数据，全部模型已重新拟合！</div>';
+setTimeout(()=>{st.innerHTML=''},5000);
+// Clear inputs
+document.getElementById('newVolume').value='';document.getElementById('newCost').value='';document.getElementById('newUnitCost').value='';document.getElementById('newEfficiency').value='';
+// Auto-advance month selector
+const sel=document.getElementById('newMonthMonth');if(sel.selectedIndex<11)sel.selectedIndex++;
+}
+
+function removeLastData(){
+if(months.length<=4){alert('数据不能少于4期，无法继续删除');return}
+const rm=months.pop();monthsShort.pop();volume.pop();cost.pop();unitCost.pop();efficiency.pop();
+changeLogEntries.push({time:new Date().toLocaleString('zh-CN'),action:'remove',month:rm});
+refitAllModels();refreshAll();
+const st=document.getElementById('addDataStatus');st.innerHTML='<div class="alert alert-warning" style="padding:8px 12px;margin:0"><span>⚠️</span> 已删除 '+rm+' 数据，全部模型已重新拟合！</div>';
+setTimeout(()=>{st.innerHTML=''},5000);
+}
+
+function refreshAll(){
+// Update overview stats cards
+const n=months.length,li=n-1;
+const monLbl=months[li].replace('-','\u5e74').replace(/-/,'\u6708');
+document.getElementById('ovVol').innerHTML=volume[li].toLocaleString('en-US',{maximumFractionDigits:0})+'<span class="stat-unit">\u4e07\u7968</span>';
+document.getElementById('ovVolMonth').textContent=monLbl;
+document.getElementById('ovCost').innerHTML=cost[li].toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'<span class="stat-unit">\u4e07\u5143</span>';
+document.getElementById('ovCostMonth').textContent=monLbl;
+document.getElementById('ovUC').innerHTML=unitCost[li].toFixed(6)+'<span class="stat-unit">\u5143</span>';
+document.getElementById('ovUCMonth').textContent=monLbl;
+document.getElementById('ovEff').innerHTML=efficiency[li].toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'<span class="stat-unit">\u4ef6/\u4eba</span>';
+document.getElementById('ovEffMonth').textContent=monLbl;
+// Update overview summary stats
+const avg=arr=>arr.reduce((a,b)=>a+b,0)/arr.length;const rng=arr=>Math.max(...arr)-Math.min(...arr);
+document.getElementById('ovAvgCost').innerHTML=avg(cost).toLocaleString('en-US',{maximumFractionDigits:0})+'<span class="ri-unit">\u4e07\u5143</span>';
+document.getElementById('ovAvgEff').innerHTML=avg(efficiency).toLocaleString('en-US',{maximumFractionDigits:0})+'<span class="ri-unit">\u4ef6</span>';
+document.getElementById('ovAvgUC').innerHTML=avg(unitCost).toFixed(3)+'<span class="ri-unit">\u5143</span>';
+document.getElementById('ovAvgVol').innerHTML=avg(volume).toLocaleString('en-US',{maximumFractionDigits:0})+'<span class="ri-unit">\u4e07</span>';
+document.getElementById('ovCostRange').innerHTML=rng(cost).toLocaleString('en-US',{maximumFractionDigits:0})+'<span class="ri-unit">\u4e07\u5143</span>';
+document.getElementById('ovEffRange').innerHTML=rng(efficiency).toLocaleString('en-US',{maximumFractionDigits:0})+'<span class="ri-unit">\u4ef6</span>';
+// Update trend chart h-tag
+const trendTag=document.querySelector('#tab-overview .h-tag');if(trendTag)trendTag.textContent=months[0]+' ~ '+months[li]+' · '+n+'\u671f';
+// Update data tab
+renderDataTable();
+document.getElementById('statTotal').innerHTML=n+'<span class="stat-unit">\u671f</span>';document.getElementById('statStart').textContent=months[0];document.getElementById('statEnd').textContent=months[li];document.getElementById('dataCountTag').textContent=n+' \u671f';
+// Update header badge
+document.querySelector('.status-badge span').textContent='\u6a21\u578b\u8fd0\u884c\u4e2d \u00b7 '+n+'\u671f\u6570\u636e\u5df2\u52a0\u8f7d';
+// Update change log
+renderChangeLog();
+// Re-render overview charts
+renderOverviewCharts();
+// Re-render model tab if visible
+const modelTab=document.getElementById('tab-models');if(modelTab.classList.contains('active'))renderModelTab();
+// Re-render checkboxes
+const s1Tab=document.getElementById('tab-scenario1');if(s1Tab.classList.contains('active'))renderModelCheckboxes('s1');
+const s2Tab=document.getElementById('tab-scenario2');if(s2Tab.classList.contains('active'))renderModelCheckboxes('s2');
+// Re-render correlation tab if visible
+const corrTab=document.getElementById('tab-correlation');if(corrTab.classList.contains('active'))renderCorrCharts();
+}
+
+function renderChangeLog(){
+const cl=document.getElementById('changeLog');if(changeLogEntries.length===0){cl.innerHTML='<div class="text-muted">\u6682\u65e0\u53d8\u66f4\u8bb0\u5f55</div>';return}
+cl.innerHTML=changeLogEntries.slice().reverse().map(e=>{const icon=e.action==='add'?'➕':'🗑️';const color=e.action==='add'?'var(--green2)':'var(--red2)';let detail='';if(e.vol!==undefined)detail=` | \u4e2d\u8f6c:${e.vol.toFixed(0)} | \u6210\u672c:${e.cost.toFixed(2)} | \u5355\u7968:${e.unitCost.toFixed(6)} | \u4eba\u6548:${e.eff.toFixed(2)}`;return '<div style="padding:6px 0;border-bottom:1px solid rgba(51,65,85,0.3)"><span style="color:'+color+'">'+icon+'</span> <span style="color:var(--text2)">'+e.time+'</span> <span style="color:var(--text)">'+e.month+'</span><span style="color:var(--text3)">'+detail+'</span></div>'}).join('');
+}
+
+// INIT
+document.getElementById('currentDate').textContent=new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+Chart.defaults.color='#94a3b8';Chart.defaults.borderColor='#334155';Chart.defaults.font.family="'Segoe UI','Microsoft YaHei',sans-serif";Chart.defaults.font.size=11;
+
+// TAB
+function switchTab(e,name){document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));e.currentTarget.classList.add('active');document.getElementById('tab-'+name).classList.add('active');setTimeout(()=>{if(name==='overview')renderOverviewCharts();if(name==='correlation')renderCorrCharts();if(name==='models')renderModelTab();if(name==='data')renderDataTable();if(name==='scenario1')renderModelCheckboxes('s1');if(name==='scenario2')renderModelCheckboxes('s2')},50)}
+
+// OVERVIEW CHARTS
+let chartTrendObj,chartCostBarObj,chartScatterObj;
+function renderOverviewCharts(){
+if(chartTrendObj)chartTrendObj.destroy();
+chartTrendObj=new Chart(document.getElementById('chartTrend'),{type:'bar',data:{labels:months.map((m,i)=>m),datasets:[{type:'bar',label:'操作成本(万元)',data:cost.map(v=>+v.toFixed(2)),backgroundColor:'rgba(245,158,11,0.6)',borderColor:'rgba(245,158,11,1)',borderWidth:1,yAxisID:'y1',order:2},{type:'line',label:'人均效能(件)',data:efficiency,borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,0.1)',borderWidth:2.5,fill:true,tension:0.35,pointRadius:4,pointBackgroundColor:'#a78bfa',pointBorderColor:'#fff',pointBorderWidth:1.5,yAxisID:'y2',order:1}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',labels:{usePointStyle:true,padding:16}},tooltip:{backgroundColor:'rgba(15,23,42,0.95)',borderColor:'#334155',borderWidth:1,padding:12,cornerRadius:8}},scales:{x:{grid:{color:'rgba(51,65,85,0.3)'},ticks:{maxRotation:45,minRotation:45,font:{size:10}}},y1:{type:'linear',position:'left',title:{display:true,text:'操作成本(万元)',color:'#fbbf24'},grid:{color:'rgba(51,65,85,0.2)'},ticks:{color:'#fbbf24',callback:v=>v.toLocaleString()}},y2:{type:'linear',position:'right',title:{display:true,text:'人均效能(件)',color:'#a78bfa'},grid:{display:false},ticks:{color:'#a78bfa'}}}}});
+if(chartCostBarObj)chartCostBarObj.destroy();
+chartCostBarObj=new Chart(document.getElementById('chartCostBar'),{type:'bar',data:{labels:months.map((m,i)=>(i<12?'25-':'26-')+monthsShort[i]),datasets:[{label:'操作成本(万元)',data:cost.map(v=>+v.toFixed(2)),backgroundColor:cost.map((v,i)=>i===cost.length-1?'rgba(59,130,246,0.7)':'rgba(59,130,246,0.35)'),borderColor:cost.map((v,i)=>i===cost.length-1?'#3b82f6':'rgba(59,130,246,0.5)'),borderWidth:1.5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(15,23,42,0.95)',cornerRadius:8}},scales:{x:{grid:{display:false},ticks:{maxRotation:45,minRotation:45,font:{size:9}}},y:{grid:{color:'rgba(51,65,85,0.2)'},title:{display:true,text:'万元'}}}}});
+if(chartScatterObj)chartScatterObj.destroy();
+chartScatterObj=new Chart(document.getElementById('chartScatter'),{type:'scatter',data:{datasets:[{label:'月度数据',data:efficiency.map((e,i)=>({x:e,y:unitCost[i]})),backgroundColor:'rgba(6,182,212,0.6)',borderColor:'#22d3ee',pointRadius:6,pointHoverRadius:8},{label:'回归线 r=-0.54',data:[{x:1700,y:UC_MODEL.predictUnitCost(1700)},{x:2300,y:UC_MODEL.predictUnitCost(2300)}],type:'line',borderColor:'#f87171',backgroundColor:'transparent',borderWidth:2,pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{usePointStyle:true}},tooltip:{callbacks:{label:ctx=>`Eff: ${ctx.parsed.x.toFixed(1)}, UC: ${ctx.parsed.y.toFixed(6)}`}}},scales:{x:{title:{display:true,text:'人均效能(件/人)'},grid:{color:'rgba(51,65,85,0.2)'}},y:{title:{display:true,text:'单票操作成本(元)'},grid:{color:'rgba(51,65,85,0.2)'},ticks:{callback:v=>v.toFixed(3)}}}}});
+}
+
+// CORRELATION
+function renderCorrMatrix(){const vars=['中转结算量','操作成本','单票成本','人均效能'];const cm={};CORRS.forEach(c=>{cm[c.x+'|'+c.y]=c;cm[c.y+'|'+c.x]=c});let html='<div class="corr-cell header"></div>';vars.forEach(v=>html+=`<div class="corr-cell header">${v}</div>`);vars.forEach(r=>{html+=`<div class="corr-cell label">${r}</div>`;vars.forEach(c=>{if(r===c){html+='<div class="corr-cell"><div class="corr-r text-accent">1.000</div><div class="corr-p">—</div></div>'}else{const corr=cm[r+'|'+c];if(corr){const abs=Math.abs(corr.r);const cls=abs>=0.8?(corr.r>0?'corr-strong-pos':'corr-strong-neg'):abs>=0.5?(corr.r>0?'corr-moderate-pos':'corr-moderate-neg'):abs>=0.3?(corr.r>0?'corr-moderate-pos':'corr-moderate-neg'):'corr-weak';html+=`<div class="corr-cell"><div class="corr-r ${cls}">${corr.r.toFixed(4)}</div><div class="corr-p">${corr.sig}</div></div>`}}})});document.getElementById('corrMatrix').innerHTML=html}
+function renderCorrStrength(){const items=CORRS.map(c=>{const abs=Math.abs(c.r);let s,col,d;if(abs>=0.8){s='强相关';col='text-green';d=c.r>0?'强正相关':'强负相关'}else if(abs>=0.5){s='中等相关';col='text-yellow';d=c.r>0?'中等正相关':'中等负相关'}else if(abs>=0.3){s='弱相关';col='text-muted';d=c.r>0?'弱正相关':'弱负相关'}else{s='极弱/无相关';col='text-muted';d='几乎无线性相关性'}let st=c.sig==='***'?'极显著(p<0.001)':c.sig==='**'?'极显著(p<0.01)':c.sig==='*'?'显著(p<0.05)':'不显著(p≥0.05)';let tg=c.sig==='***'?'tag-green':c.sig==='**'?'tag-green':c.sig==='*'?'tag-yellow':'tag-gray';return`<div class="result-item" style="margin-bottom:8px"><div class="ri-label">${c.x} ↔ ${c.y}</div><div style="display:flex;align-items:center;gap:12px;margin-top:4px"><span class="ri-value ${col}" style="font-size:20px">r=${c.r.toFixed(4)}</span><span class="badge ${tg}">${st}</span></div><div class="ri-desc" style="margin-top:4px"><b>${s}</b> · ${d}</div></div>`}).join('');document.getElementById('corrStrengthList').innerHTML=items}
+let chartCorrEffUCObj,chartCorrVolEffObj,chartCorrVolUCObj,chartCorrVolCostObj;
+function renderCorrCharts(){renderCorrMatrix();renderCorrStrength();
+if(chartCorrEffUCObj)chartCorrEffUCObj.destroy();chartCorrEffUCObj=makeScatter(document.getElementById('chartCorrEffUC'),efficiency,unitCost,'人均效能(件/人)','单票操作成本(元)','#22d3ee',UC_MODEL.r,UC_MODEL.p,UC_MODEL.slope,UC_MODEL.intercept,6);
+if(chartCorrVolEffObj)chartCorrVolEffObj.destroy();chartCorrVolEffObj=makeScatter(document.getElementById('chartCorrVolEff'),volume,efficiency,'中转结算量(万票)','人均效能(件/人)','#a78bfa',VOL_EFF_MODEL.r||0,VOL_EFF_MODEL.p||0,VOL_EFF_MODEL.slope,VOL_EFF_MODEL.intercept,0);
+if(chartCorrVolUCObj)chartCorrVolUCObj.destroy();const nn=volume.length,sxv=volume.reduce((a,b)=>a+b,0),syu=unitCost.reduce((a,b)=>a+b,0),sxyvu=volume.reduce((a,_,i)=>a+volume[i]*unitCost[i],0),sxxv=volume.reduce((a,b)=>a+b*b,0);const vucS2=(nn*sxyvu-sxv*syu)/(nn*sxxv-sxv*sxv),vucI2=(syu-vucS2*sxv)/nn;chartCorrVolUCObj=makeScatter(document.getElementById('chartCorrVolUC'),volume,unitCost,'中转结算量(万票)','单票操作成本(元)','#34d399',CORRS[1].r,CORRS[1].p,vucS2,vucI2,6);
+if(chartCorrVolCostObj)chartCorrVolCostObj.destroy();chartCorrVolCostObj=makeScatter(document.getElementById('chartCorrVolCost'),volume,cost,'中转结算量(万票)','操作成本(万元)','#fb923c',M2.r,M2.p,M2.slope,M2.intercept,2);
+// Update correlation tab labels
+const effUCEff=UC_MODEL.r,pEffUC=UC_MODEL.p;const tagEffUC=document.getElementById('tagCorrEffUC');if(tagEffUC)tagEffUC.textContent=`r=${effUCEff.toFixed(4)} · p=${fmtP(pEffUC)} ${sigTag(pEffUC)}`;
+const tagVolEff=document.getElementById('tagCorrVolEff');if(tagVolEff)tagVolEff.textContent=`r=${VOL_EFF_MODEL.r.toFixed(4)} · p=${fmtP(VOL_EFF_MODEL.p)} ${sigTag(VOL_EFF_MODEL.p)}`;
+const tagVolUC=document.getElementById('tagCorrVolUC');if(tagVolUC)tagVolUC.textContent=`r=${CORRS[1].r.toFixed(4)} · p=${fmtP(CORRS[1].p)} ${CORRS[1].sig}`;
+const tagVolCost=document.getElementById('tagCorrVolCost');if(tagVolCost)tagVolCost.textContent=`r=${CORRS[0].r.toFixed(4)} · p=${fmtP(CORRS[0].p)} ${CORRS[0].sig}`;
+// Update matrix n label
+const matrixN=document.querySelector('#corrMatrix').closest('.card').querySelector('.h-tag');if(matrixN)matrixN.textContent=`n=${months.length} · 双尾检验`;
+}
+function makeScatter(ctx,xData,yData,xLabel,yLabel,color,r,p,slope,intercept,dec){const points=xData.map((x,i)=>({x:x,y:yData[i]}));const xMin=Math.min(...xData),xMax=Math.max(...xData);const regLine=[{x:xMin,y:slope*xMin+intercept},{x:xMax,y:slope*xMax+intercept}];return new Chart(ctx,{type:'scatter',data:{datasets:[{label:'月度数据',data:points,backgroundColor:color+'99',borderColor:color,pointRadius:6,pointHoverRadius:9},{label:`回归线 r=${r.toFixed(4)}`,data:regLine,type:'line',borderColor:'#f87171',backgroundColor:'transparent',borderWidth:2,pointRadius:0,fill:false,borderDash:[6,3]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{usePointStyle:true,padding:12}},tooltip:{callbacks:{label:ctx=>`${xLabel}: ${ctx.parsed.x.toFixed(1)} | ${yLabel}: ${ctx.parsed.y.toFixed(dec+2)}`}}},scales:{x:{title:{display:true,text:xLabel},grid:{color:'rgba(51,65,85,0.2)'}},y:{title:{display:true,text:yLabel},grid:{color:'rgba(51,65,85,0.2)'},ticks:{callback:v=>v.toFixed(dec)}}}}})}
+
+// MODEL TAB
+function renderModelTab(){const grid=document.getElementById('modelGrid');grid.innerHTML=ALL_MODELS.map(m=>{const r2Pct=(m.r2*100).toFixed(2);const rStr=m.r!==undefined?`r=${m.r.toFixed(4)}`:'—';const pStr=m.p!==undefined?`p=${m.p.toFixed(4)}`:'—';const w=modelWeights[m.id]||0;let tc=m.type==='线性'?'tag-blue':m.type==='多元'?'tag-purple':m.type==='多项式'?'tag-yellow':m.type==='对数'?'tag-gray':m.type==='指数'?'tag-red':'tag-green';return`<div class="model-card" id="mc-${m.id}"><div class="mc-header"><span class="mc-name">${m.id} · ${m.name}</span><span class="mc-type ${tc}">${m.type}</span></div><div class="mc-formula">${m.formula}</div><div class="mc-stats"><span class="mc-stat"><b>R²</b> ${r2Pct}%</span><span class="mc-stat"><b>${rStr}</b></span><span class="mc-stat"><b>${pStr}</b></span></div><div class="mc-weight"><label>权重</label><input type="range" class="weight-slider" min="0" max="100" value="${w}" oninput="updateWeight('${m.id}',this.value)"/><span class="weight-value" id="wv-${m.id}">${w}%</span></div></div>`}).join('');renderModelCompareChart();updateWeightSummary()}
+let chartModelCompareObj;
+function renderModelCompareChart(){if(chartModelCompareObj)chartModelCompareObj.destroy();chartModelCompareObj=new Chart(document.getElementById('chartModelCompare'),{type:'bar',data:{labels:ALL_MODELS.map(m=>m.id+' '+m.name.split('(')[0].trim()),datasets:[{label:'R² (%)',data:ALL_MODELS.map(m=>+(m.r2*100).toFixed(2)),backgroundColor:'rgba(59,130,246,0.6)',borderColor:'#3b82f6',borderWidth:1.5,borderRadius:6},{label:'权重 (%)',data:ALL_MODELS.map(m=>modelWeights[m.id]||0),backgroundColor:'rgba(139,92,246,0.6)',borderColor:'#8b5cf6',borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{usePointStyle:true}},tooltip:{cornerRadius:8}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:30}},y:{grid:{color:'rgba(51,65,85,0.2)'},title:{display:true,text:'%'},beginAtZero:true}}}})}
+function updateWeight(id,val){modelWeights[id]=parseInt(val);document.getElementById('wv-'+id).textContent=val+'%'}
+function normalizeWeights(){const total=Object.values(modelWeights).reduce((a,b)=>a+b,0);if(total===0){alert('请先设置至少一个模型的权重');return}ALL_MODELS.forEach(m=>{const nw=Math.round((modelWeights[m.id]/total)*100);modelWeights[m.id]=nw;document.getElementById('wv-'+m.id).textContent=nw+'%';const sl=document.querySelector(`#mc-${m.id} .weight-slider`);if(sl)sl.value=nw});updateWeightSummary();if(chartModelCompareObj)renderModelCompareChart()}
+function getActiveModels(){return ALL_MODELS.filter(m=>(modelWeights[m.id]||0)>0)}
+function getNormalizedWeights(){const active=getActiveModels();const total=active.reduce((s,m)=>s+modelWeights[m.id],0);const map={};active.forEach(m=>map[m.id]=modelWeights[m.id]/total);return map}
+function updateWeightSummary(){const active=getActiveModels();const wMap=getNormalizedWeights();const totalW=Object.values(modelWeights).reduce((a,b)=>a+b,0);if(active.length===0){document.getElementById('weightSummary').innerHTML=`<div class="text-center text-muted" style="padding:40px 0"><div style="font-size:36px;opacity:0.3">⚖️</div><div class="mt-3">设置权重后点击下方按钮</div></div>`;return}let html=`<div class="weight-summary"><div class="ws-title">⚖️ 加权标准估算汇总</div><div class="alert alert-info" style="margin-bottom:12px"><div class="alert-icon">ℹ️</div><div style="font-size:12px">总权重: ${totalW}% · 活跃模型: ${active.length}个 · 权重已自动归一化</div></div><div class="ws-grid">`;const costTarget1=BASE.cost-1000;let wEff=0;active.forEach(m=>{if(m.predictEff){const e=m.predictEff(costTarget1);if(e&&isFinite(e))wEff+=e*wMap[m.id]}else if(m.id==='M3'){wEff+=((costTarget1-m.a*BASE.volume-m.c)/m.b)*wMap[m.id]}});const effT=2200;let wCost=0;active.forEach(m=>{if(m.predictCost){const c=m.predictCost(effT);if(isFinite(c))wCost+=c*wMap[m.id]}else if(m.id==='M2'){wCost+=m.predictCostByVol(BASE.volume)*wMap[m.id]}});const wUC=UC_MODEL.predictUnitCost(effT);html+=`<div class="ws-item"><div class="ws-label">场景一·成本↓1000万 → 需达人效</div><div class="ws-value accent">${wEff.toFixed(2)} <span style="font-size:12px;color:var(--text3)">件/人</span></div></div>`;html+=`<div class="ws-item"><div class="ws-label">场景二·人效=2200 → 预测成本</div><div class="ws-value yellow">${wCost.toFixed(2)} <span style="font-size:12px;color:var(--text3)">万元</span></div></div>`;html+=`<div class="ws-item"><div class="ws-label">场景二·人效=2200 → 预测单票成本</div><div class="ws-value green">${wUC.toFixed(6)} <span style="font-size:12px;color:var(--text3)">元</span></div></div>`;html+=`<div class="ws-item"><div class="ws-label">场景二·成本变化</div><div class="ws-value ${wCost>BASE.cost?'red':'green'}">${(wCost-BASE.cost).toFixed(2)} <span style="font-size:12px;color:var(--text3)">万元</span></div></div>`;html+=`</div></div>`;document.getElementById('weightSummary').innerHTML=html}
+
+// SCENARIO CHECKBOXES
+function renderModelCheckboxes(prefix){const container=document.getElementById(prefix+'ModelList');container.innerHTML=ALL_MODELS.map(m=>{const checked=(modelWeights[m.id]||0)>0?'checked':'';const r2Pct=(m.r2*100).toFixed(1);return`<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px"><input type="checkbox" id="${prefix}_chk_${m.id}" ${checked} onchange="onModelCheck('${prefix}','${m.id}',this.checked)" style="width:16px;height:16px;cursor:pointer"><span style="flex:1">${m.id} ${m.name}</span><span class="badge tag-gray" style="font-size:10px">R²=${r2Pct}%</span></label>`}).join('')}
+function onModelCheck(prefix,id,checked){if(!checked)modelWeights[id]=0;else if(modelWeights[id]===0)modelWeights[id]=15;const wv=document.getElementById('wv-'+id);if(wv)wv.textContent=modelWeights[id]+'%';const sl=document.querySelector(`#mc-${id} .weight-slider`);if(sl)sl.value=modelWeights[id]}
+function getSelectedModels(prefix){return ALL_MODELS.filter(m=>{const chk=document.getElementById(prefix+'_chk_'+m.id);return chk&&chk.checked})}
+
+// SCENARIO 1
+let chartS1CompareObj;
+function runScenario1(){const reduction=parseFloat(document.getElementById('s1CostReduction').value);const unit=document.getElementById('s1Unit').value;if(isNaN(reduction)||reduction<=0){alert('请输入有效的成本下降数值');return}let targetCost,reductionText;if(unit==='wan'){targetCost=BASE.cost-reduction;reductionText=`下降 ${reduction} 万元`}else{targetCost=BASE.cost*(1-reduction/100);reductionText=`下降 ${reduction}%`}const models=getSelectedModels('s1');if(models.length===0){alert('请至少选择一个模型');return}document.getElementById('s1ModelCount').textContent=`${models.length}个模型参与计算`;const wMap=getNormalizedWeights();const results=models.map(m=>{let effNeeded=null;if(m.id==='M3'){effNeeded=(targetCost-m.a*BASE.volume-m.c)/m.b}else if(m.predictEff){effNeeded=m.predictEff(targetCost)}const effDelta=effNeeded?effNeeded-BASE.eff:null;const effDeltaPct=effNeeded?(effDelta/BASE.eff*100):null;return{model:m,effNeeded,effDelta,effDeltaPct}});let weightedEff=0;results.forEach(r=>{if(r.effNeeded&&isFinite(r.effNeeded))weightedEff+=r.effNeeded*(wMap[r.model.id]||0)});
+// Render
+let html=`<div class="alert alert-warning"><div class="alert-icon">📌</div><div><b>目标：</b>9月操作成本${reductionText}，从 ${BASE.cost.toFixed(2)} 万元降至 <b>${targetCost.toFixed(2)} 万元</b><br><b>基准人效：</b>${BASE.eff.toFixed(2)} 件/人（2026年7月）</div></div>`;
+html+=`<div class="result-grid">`;results.forEach(r=>{const m=r.model;if(r.effNeeded&&isFinite(r.effNeeded)){const dc=r.effDelta>0?'red':'green';const ar=r.effDelta>0?'↑':'↓';html+=`<div class="result-item"><div class="ri-label">${m.id} · ${m.name}</div><div class="ri-value blue">${r.effNeeded.toFixed(2)}<span class="ri-unit">件/人</span></div><div class="ri-desc">需${r.effDelta>0?'提升':'降低'} <b class="text-${dc}">${ar}${Math.abs(r.effDelta).toFixed(2)}</b> (${r.effDeltaPct>0?'+':''}${r.effDeltaPct.toFixed(2)}%)</div><div class="ri-desc text-muted">R²=${(m.r2*100).toFixed(1)}% · ${m.type}</div></div>`}else{html+=`<div class="result-item"><div class="ri-label">${m.id} · ${m.name}</div><div class="ri-value text-muted">无法反推</div><div class="ri-desc">该模型不支持反推人效</div></div>`}});html+=`</div>`;
+// Weighted
+html+=`<div class="recommend-box"><div class="rb-title">⭐ 加权标准推荐值</div><div class="rb-content">基于各模型权重加权计算，人均效能需达到 <b style="font-size:22px;color:var(--accent2)">${weightedEff.toFixed(2)} 件/人</b><br>较基准值 ${BASE.eff.toFixed(2)} 需 <b class="${weightedEff>BASE.eff?'text-red':'text-green'}">${weightedEff>BASE.eff?'提升':'降低'} ${Math.abs(weightedEff-BASE.eff).toFixed(2)} 件</b>（${((weightedEff-BASE.eff)/BASE.eff*100).toFixed(2)}%）</div></div>`;
+document.getElementById('s1Results').innerHTML=html;
+// Chart
+if(chartS1CompareObj)chartS1CompareObj.destroy();const chartData=results.map(r=>r.effNeeded&&isFinite(r.effNeeded)?+r.effNeeded.toFixed(2):0);chartData.push(+weightedEff.toFixed(2));chartData.push(+BASE.eff.toFixed(2));const labels=results.map(r=>r.model.id);labels.push('加权均值');labels.push('当前基准');chartS1CompareObj=new Chart(document.getElementById('chartS1Compare'),{type:'bar',data:{labels:labels,datasets:[{label:'所需人均效能(件/人)',data:chartData,backgroundColor:chartData.map((v,i)=>i===labels.length-2?'rgba(139,92,246,0.8)':i===labels.length-1?'rgba(148,163,184,0.5)':'rgba(59,130,246,0.6)'),borderColor:chartData.map((v,i)=>i===labels.length-2?'#8b5cf6':i===labels.length-1?'#94a3b8':'#3b82f6'),borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed.y.toFixed(2)} 件/人`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(51,65,85,0.2)'},title:{display:true,text:'件/人'}}}}})}
+
+// SCENARIO 2
+let chartS2CostObj,chartS2UnitCostObj;
+function runScenario2(){const effTarget=parseFloat(document.getElementById('s2Efficiency').value);if(isNaN(effTarget)||effTarget<=0){alert('请输入有效的人均效能值');return}const models=getSelectedModels('s2');if(models.length===0){alert('请至少选择一个模型');return}document.getElementById('s2ModelCount').textContent=`${models.length}个模型参与计算`;const wMap=getNormalizedWeights();const results=models.map(m=>{let predCost=null;if(m.predictCost){predCost=m.predictCost(effTarget)}else if(m.id==='M2'){predCost=m.predictCostByVol(BASE.volume)}const costDelta=predCost?predCost-BASE.cost:null;const costDeltaPct=predCost?(costDelta/BASE.cost*100):null;const predUC=UC_MODEL.predictUnitCost(effTarget);const ucDelta=predUC-BASE.unitCost;const ucDeltaPct=(ucDelta/BASE.unitCost*100);return{model:m,predCost,costDelta,costDeltaPct,predUC,ucDelta,ucDeltaPct}});let weightedCost=0;results.forEach(r=>{if(r.predCost&&isFinite(r.predCost))weightedCost+=r.predCost*(wMap[r.model.id]||0)});const weightedUC=UC_MODEL.predictUnitCost(effTarget);
+// Render
+let html=`<div class="alert alert-success"><div class="alert-icon">📌</div><div><b>目标：</b>人均效能调整为 <b>${effTarget.toFixed(2)} 件/人</b><br><b>基准：</b>操作成本 ${BASE.cost.toFixed(2)} 万元 · 单票成本 ${BASE.unitCost.toFixed(6)} 元</div></div>`;
+html+=`<div class="result-title">💰 操作成本预测（精确到0.01万元）</div><div class="result-grid">`;results.forEach(r=>{const m=r.model;if(r.predCost&&isFinite(r.predCost)){const dc=r.costDelta>0?'red':'green';const ar=r.costDelta>0?'↑':'↓';html+=`<div class="result-item"><div class="ri-label">${m.id} · ${m.name}</div><div class="ri-value yellow">${r.predCost.toFixed(2)}<span class="ri-unit">万元</span></div><div class="ri-desc">${ar} ${Math.abs(r.costDelta).toFixed(2)} 万元 (${r.costDeltaPct>0?'+':''}${r.costDeltaPct.toFixed(2)}%) <b class="text-${dc}"></b></div><div class="ri-desc text-muted">R²=${(m.r2*100).toFixed(1)}% · ${m.type}</div></div>`}});html+=`</div>`;
+html+=`<div class="result-title mt-4">🎫 单票操作成本预测（精确到0.000001元）</div><div class="result-grid">`;results.forEach(r=>{const m=r.model;const ar=r.ucDelta>0?'↑':'↓';const dc=r.ucDelta>0?'red':'green';html+=`<div class="result-item"><div class="ri-label">${m.id} · 单票成本预测</div><div class="ri-value green">${r.predUC.toFixed(6)}<span class="ri-unit">元</span></div><div class="ri-desc">${ar} ${Math.abs(r.ucDelta).toFixed(6)} 元 (${r.ucDeltaPct>0?'+':''}${r.ucDeltaPct.toFixed(2)}%) <b class="text-${dc}"></b></div></div>`});html+=`</div>`;
+// Weighted
+html+=`<div class="recommend-box"><div class="rb-title">⭐ 加权标准推荐值</div><div class="rb-content">基于各模型权重加权计算：<br>📊 <b>操作成本预测：</b><b style="font-size:18px;color:var(--yellow2)">${weightedCost.toFixed(2)} 万元</b>（${weightedCost>BASE.cost?'增加':'减少'} ${Math.abs(weightedCost-BASE.cost).toFixed(2)} 万元，${((weightedCost-BASE.cost)/BASE.cost*100).toFixed(2)}%）<br>🎫 <b>单票操作成本预测：</b><b style="font-size:18px;color:var(--green2)">${weightedUC.toFixed(6)} 元</b>（${weightedUC>BASE.unitCost?'增加':'减少'} ${Math.abs(weightedUC-BASE.unitCost).toFixed(6)} 元，${((weightedUC-BASE.unitCost)/BASE.unitCost*100).toFixed(2)}%）</div></div>`;
+document.getElementById('s2Results').innerHTML=html;
+// Charts
+if(chartS2CostObj)chartS2CostObj.destroy();const costData=results.map(r=>r.predCost&&isFinite(r.predCost)?+r.predCost.toFixed(2):0);costData.push(+weightedCost.toFixed(2));costData.push(+BASE.cost.toFixed(2));const labels2=results.map(r=>r.model.id);labels2.push('加权均值');labels2.push('当前基准');chartS2CostObj=new Chart(document.getElementById('chartS2Cost'),{type:'bar',data:{labels:labels2,datasets:[{label:'操作成本(万元)',data:costData,backgroundColor:costData.map((v,i)=>i===labels2.length-2?'rgba(139,92,246,0.8)':i===labels2.length-1?'rgba(148,163,184,0.5)':'rgba(245,158,11,0.6)'),borderColor:costData.map((v,i)=>i===labels2.length-2?'#8b5cf6':i===labels2.length-1?'#94a3b8':'#f59e0b'),borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed.y.toFixed(2)} 万元`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(51,65,85,0.2)'},title:{display:true,text:'万元'}}}}});
+if(chartS2UnitCostObj)chartS2UnitCostObj.destroy();const ucData=results.map(r=>+r.predUC.toFixed(6));ucData.push(+weightedUC.toFixed(6));ucData.push(+BASE.unitCost.toFixed(6));chartS2UnitCostObj=new Chart(document.getElementById('chartS2UnitCost'),{type:'bar',data:{labels:labels2,datasets:[{label:'单票成本(元)',data:ucData,backgroundColor:ucData.map((v,i)=>i===labels2.length-2?'rgba(139,92,246,0.8)':i===labels2.length-1?'rgba(148,163,184,0.5)':'rgba(16,185,129,0.6)'),borderColor:ucData.map((v,i)=>i===labels2.length-2?'#8b5cf6':i===labels2.length-1?'#94a3b8':'#10b981'),borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed.y.toFixed(6)} 元`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(51,65,85,0.2)'},title:{display:true,text:'元'},ticks:{callback:v=>v.toFixed(4)}}}}})}
+
+// DATA TABLE
+function renderDataTable(){const tbl=document.getElementById('dataTable');const n=months.length;let html='<thead><tr><th>#</th><th>月份</th><th>中转结算量(万票)</th><th>操作成本(万元)</th><th>单票操作成本(元)</th><th>人均效能(件/人)</th><th>操作</th></tr></thead><tbody>';for(let i=0;i<n;i++){html+=`<tr><td>${i+1}</td><td>${months[i]}</td><td class="num">${volume[i].toLocaleString('en-US',{minimumFractionDigits:4})}</td><td class="num">${cost[i].toLocaleString('en-US',{minimumFractionDigits:4})}</td><td class="num">${unitCost[i].toFixed(6)}</td><td class="num">${efficiency[i].toFixed(2)}</td><td>${i===n-1?'<button class="btn btn-danger btn-sm" onclick="removeLastData()">🗑️</button>':'<span class=\'text-muted\'>-</span>'}</td></tr>`}html+='</tbody>';tbl.innerHTML=html}
+
+// AUTO INIT
+renderOverviewCharts();
+</script>
+</body>
+</html>
