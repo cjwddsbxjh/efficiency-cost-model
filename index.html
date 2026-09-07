@@ -579,6 +579,7 @@ chartS2UnitCostObj=new Chart(document.getElementById('chartS2UnitCost'),{type:'b
 // DATA TABLE
 function renderDataTable(){const tbl=document.getElementById('dataTable');const n=months.length;let html='<thead><tr><th>#</th><th>月份</th><th>中转结算量(万票)</th><th>操作成本(万元)</th><th>单票操作成本(元)</th><th>人均效能(件/人)</th><th>操作</th></tr></thead><tbody>';for(let i=0;i<n;i++){html+=`<tr><td>${i+1}</td><td>${months[i]}</td><td class="num">${volume[i].toLocaleString('en-US',{minimumFractionDigits:4})}</td><td class="num">${cost[i].toLocaleString('en-US',{minimumFractionDigits:4})}</td><td class="num">${unitCost[i].toFixed(6)}</td><td class="num">${efficiency[i].toFixed(2)}</td><td>${i===n-1?'<button class="btn btn-danger btn-sm" onclick="removeLastData()">🗑️</button>':'<span class=\'text-muted\'>-</span>'}</td></tr>`}html+='</tbody>';tbl.innerHTML=html}
 
+window.addEventListener('error', function(e){console.error('JS ERROR:', e.message, e.filename+':'+e.lineno)});window.onerror=function(m,s,l){console.error('UNCAUGHT:',m,l,s);return false};
 // AUTO INIT
 if(loadData()){refitAllModels();}else{refitAllModels();}
 renderOverviewCharts();
