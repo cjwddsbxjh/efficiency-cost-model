@@ -267,9 +267,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI','Microsoft Ya
 <div class="form-group"><label class="form-label">操作成本（万元）<span class="req">*</span></label><input type="number" class="form-input" id="newCost" placeholder="例如：51000" step="any"><div class="form-hint">单位：万元</div></div>
 <div class="form-group"><label class="form-label">单票操作成本（元）</label><input type="number" class="form-input" id="newUnitCost" placeholder="留空则自动计算" step="any"><div class="form-hint">单位：元。留空系统将根据中转量÷操作成本自动计算</div></div>
 <div class="form-group"><label class="form-label">人均效能（件/人）<span class="req">*</span></label><input type="number" class="form-input" id="newEfficiency" placeholder="例如：2100" step="any"><div class="form-hint">单位：件/人</div></div>
-<button class="btn btn-success btn-lg w-full" onclick="addNewData()">➕ 追加并重算全部模型</button>
-<button class="btn btn-danger btn-sm w-full mt-2" onclick="removeLastData()">🗑️ 删除最后一期数据</button>
-<div id="addDataStatus" style="margin-top:10px"></div>
+                    <button class="btn btn-primary" onclick="addNewData()">➕ 追加并重算全部模型</button>
+                    <button class="btn btn-danger" onclick="removeLastData()" style="margin-left:8px">🗑️ 删除最后一期</button>
+                    <button class="btn btn-secondary" onclick="resetToOriginal()" style="margin-left:8px">↩️ 恢复原始数据</button>
+                    <div id="addDataStatus" style="margin-top:12px"></div>
+                    <div class="alert alert-info" style="margin-top:12px;padding:8px 12px"><div class="alert-icon">💾</div><div style="font-size:12px">新增/删除的数据会自动保存到浏览器本地（localStorage），刷新页面或重开浏览器不会丢失。<br>点击「恢复原始数据」可清除本地存储并恢复到初始19期数据。</div></div>
 </div>
 </div>
 <div class="card col-7">
@@ -299,6 +301,13 @@ let cost=[54360.8619459753,48054.4618507218,46690.7600447206,49540.5377581311,50
 let unitCost=[0.235416407281901,0.277250909669365,0.179694162430275,0.187911296658197,0.184348933544797,0.186855502559107,0.188034789763304,0.191821295933866,0.190717549575474,0.1933632621873,0.187065445034439,0.204740087295995,0.178859984336326,0.273378104138258,0.179268358903466,0.18934228652835,0.184258400964723,0.195387127270379,0.18591269404383];
 let efficiency=[1828.34,1796.87,1935.59,1989.5,2014.5,1994.76,1960.02,1949.65,2037.6,2044.32,2046.75,2035.11,2115.19,2041.36,2055.67,2113.36,2181.33,2098.14,2078.41];
 let changeLogEntries=[];
+
+// === LOCALSTORAGE PERSISTENCE ===
+const STORAGE_KEY='efficiency_cost_data_v1';
+function saveData(){try{const data={months,monthsShort,volume,cost,unitCost,efficiency,changeLogEntries};localStorage.setItem(STORAGE_KEY,JSON.stringify(data));console.log('数据已保存到本地')}catch(e){console.warn('保存失败:',e)}}
+function loadData(){try{const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return false;const data=JSON.parse(raw);if(data.months&&data.months.length>=4){months=data.months;monthsShort=data.monthsShort;volume=data.volume;cost=data.cost;unitCost=data.unitCost;efficiency=data.efficiency;changeLogEntries=data.changeLogEntries||[];console.log('从本地恢复'+months.length+'期数据');return true}}catch(e){console.warn('加载失败:',e)}return false}
+function clearStoredData(){localStorage.removeItem(STORAGE_KEY);console.log('本地数据已清除')}
+function resetToOriginal(){clearStoredData();location.reload()}
 
 // MODELS (let = mutable for dynamic refit)
 let M1={id:'M1',name:'线性回归 (Cost~Eff)',type:'线性',formula:'',slope:11.808168,intercept:27347.828346,r:0.371663,p:0.117163,r2:0.138133,predictCost(e){return this.slope*e+this.intercept},predictEff(c){return (c-this.intercept)/this.slope}};
@@ -380,8 +389,8 @@ if(uc===''||isNaN(parseFloat(uc))){uc=vol>0?cst/vol:0}else{uc=parseFloat(uc)}
 if(months.includes(mon)){alert(`\u6708\u4efd ${mon} \u5df2\u5b58\u5728\uff0c\u8bf7\u52ff\u91cd\u590d\u6dfb\u52a0`);return}
 months.push(mon);const ms=parseInt(mo);monthsShort.push(ms+'\u6708');volume.push(vol);cost.push(cst);unitCost.push(uc);efficiency.push(eff);
 changeLogEntries.push({time:new Date().toLocaleString('zh-CN'),action:'add',month:mon,vol:vol,cost:cst,unitCost:uc,eff:eff});
-refitAllModels();refreshAll();
-const st=document.getElementById('addDataStatus');st.innerHTML='<div class="alert alert-success" style="padding:8px 12px;margin:0"><span>✅</span> 已追加 '+mon+' 数据，全部模型已重新拟合！</div>';
+refitAllModels();refreshAll();saveData();
+const st=document.getElementById('addDataStatus');st.innerHTML='<div class="alert alert-success" style="padding:8px 12px;margin:0"><span>✅</span> 已追加 '+mon+' 数据，全部模型已重新拟合！数据已自动保存。</div>';
 setTimeout(()=>{st.innerHTML=''},5000);
 // Clear inputs
 document.getElementById('newVolume').value='';document.getElementById('newCost').value='';document.getElementById('newUnitCost').value='';document.getElementById('newEfficiency').value='';
@@ -393,8 +402,8 @@ function removeLastData(){
 if(months.length<=4){alert('数据不能少于4期，无法继续删除');return}
 const rm=months.pop();monthsShort.pop();volume.pop();cost.pop();unitCost.pop();efficiency.pop();
 changeLogEntries.push({time:new Date().toLocaleString('zh-CN'),action:'remove',month:rm});
-refitAllModels();refreshAll();
-const st=document.getElementById('addDataStatus');st.innerHTML='<div class="alert alert-warning" style="padding:8px 12px;margin:0"><span>⚠️</span> 已删除 '+rm+' 数据，全部模型已重新拟合！</div>';
+refitAllModels();refreshAll();saveData();
+const st=document.getElementById('addDataStatus');st.innerHTML='<div class="alert alert-warning" style="padding:8px 12px;margin:0"><span>⚠️</span> 已删除 '+rm+' 数据，全部模型已重新拟合！数据已自动保存。</div>';
 setTimeout(()=>{st.innerHTML=''},5000);
 }
 
@@ -525,6 +534,7 @@ if(chartS2UnitCostObj)chartS2UnitCostObj.destroy();const ucData=results.map(r=>+
 function renderDataTable(){const tbl=document.getElementById('dataTable');const n=months.length;let html='<thead><tr><th>#</th><th>月份</th><th>中转结算量(万票)</th><th>操作成本(万元)</th><th>单票操作成本(元)</th><th>人均效能(件/人)</th><th>操作</th></tr></thead><tbody>';for(let i=0;i<n;i++){html+=`<tr><td>${i+1}</td><td>${months[i]}</td><td class="num">${volume[i].toLocaleString('en-US',{minimumFractionDigits:4})}</td><td class="num">${cost[i].toLocaleString('en-US',{minimumFractionDigits:4})}</td><td class="num">${unitCost[i].toFixed(6)}</td><td class="num">${efficiency[i].toFixed(2)}</td><td>${i===n-1?'<button class="btn btn-danger btn-sm" onclick="removeLastData()">🗑️</button>':'<span class=\'text-muted\'>-</span>'}</td></tr>`}html+='</tbody>';tbl.innerHTML=html}
 
 // AUTO INIT
+if(loadData()){refitAllModels();}
 renderOverviewCharts();
 </script>
 </body>
